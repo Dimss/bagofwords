@@ -85,7 +85,7 @@ ENV PIP_NO_CACHE_DIR=1 \
 # Install Python runtime, Node.js 22 (runtime only), and minimal system libs
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends curl ca-certificates gnupg git openssh-client python3 python3-venv tini libpq5  && \
+    apt-get install -y --no-install-recommends curl ca-certificates gnupg git openssh-client python3 python3-venv tini libpq5 vim && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg && \
@@ -108,7 +108,7 @@ RUN apt-get update && \
 RUN groupadd -r app \
     && useradd -r -g app -m -d /home/app -s /usr/sbin/nologin app \
     && mkdir -p /home/app /app/backend/db /app/frontend \
-    && chown -R app:app /app /home/app
+    && chown app:app /app /home/app
 
 # Copy Python virtual environment and application code
 COPY --from=backend-builder --chown=app:app /opt/venv /opt/venv
