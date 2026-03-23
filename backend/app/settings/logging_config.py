@@ -13,6 +13,9 @@ class JsonFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
+            "filename": record.filename,
+            "lineno": record.lineno,
+            "funcName": record.funcName,
         }
         
         # Add exception info if present

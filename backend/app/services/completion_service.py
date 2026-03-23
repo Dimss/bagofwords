@@ -62,6 +62,7 @@ from app.models.tool_execution import ToolExecution
 from app.models.agent_execution import AgentExecution
 from app.models.instruction import Instruction
 
+logger = logging.getLogger(__name__)
 
 async def _get_instruction_suggestions_for_completion(
     db: AsyncSession,
@@ -1872,6 +1873,7 @@ class CompletionService:
                 """Generate SSE-formatted events for streaming completion."""
                 
                 # Send initial event
+                logger.info("completion sse stream initiated")
                 start_event = SSEEvent(
                     event="completion.started",
                     completion_id=str(completion.id),
@@ -1881,7 +1883,7 @@ class CompletionService:
                     }
                 )
                 yield format_sse_event(start_event)
-                
+                logger.info("starting queue events streaming")
                 # Stream agent events
                 async for event in event_queue.get_events():
                     yield format_sse_event(event)
@@ -1895,6 +1897,7 @@ class CompletionService:
                     }
                 )
                 yield format_sse_event(finish_event)
+                logger.info("streaming is finished")
                 yield "data: [DONE]\n\n"
 
             # Return streaming response
