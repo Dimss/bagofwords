@@ -414,8 +414,6 @@ class AgentV2:
 
     async def _generate_title_background(self, messages_context: str, plan_info: list):
         """Generate report title in background after completion.finished is sent."""
-        import logging
-        logger = logging.getLogger(__name__)
         try:
             SessionLocal = create_async_session_factory()
             async with SessionLocal() as session:
@@ -573,12 +571,14 @@ class AgentV2:
     async def _capture_telemetry_background(self, event_name: str, properties: dict):
         """Capture telemetry in background to avoid blocking main execution."""
         try:
+            logger.info("telemetry background started")
             await telemetry.capture(
                 event_name,
                 properties,
                 user_id=str(getattr(self.head_completion, 'user_id', None)) if hasattr(self.head_completion, 'user_id') and self.head_completion.user_id else None,
                 org_id=str(self.organization.id) if self.organization else None,
             )
+            logger.info("telemetry background finished")
         except Exception:
             pass
 
@@ -592,6 +592,7 @@ class AgentV2:
     async def main_execution(self):
         try:
             # Start agent execution tracking
+            logger.info("starting main execution")
             self.current_execution = await self.project_manager.start_agent_execution(
                 self.db,
                 completion_id=str(self.system_completion.id),
@@ -600,7 +601,7 @@ class AgentV2:
                 report_id=str(self.report.id) if self.report else None,
                 build_id=self.build_id,
             )
-
+            logger.info("agent execution started")
             # Telemetry in background (non-blocking)
             asyncio.create_task(self._capture_telemetry_background(
                 "agent_execution_started",
@@ -1012,7 +1013,8 @@ class AgentV2:
                                 pass
                         except Exception:
                             pass
-                        
+
+                        logger.info("startign emitting decision.final event")
                         # Emit SSE event
                         await self._emit_sse_event(SSEEvent(
                             event="decision.final",
@@ -1025,6 +1027,7 @@ class AgentV2:
                                 "metrics": decision.metrics.model_dump() if decision.metrics else None,
                             }
                         ))
+                        logger.info("decision.final event emitted")
                         
                         # IMPORTANT: Check for action FIRST before checking analysis_complete.
                         # The LLM sometimes sets analysis_complete=true when it means "this is the 
@@ -1525,8 +1528,6 @@ class AgentV2:
                         asyncio.create_task(self._generate_title_background(messages_context, plan_info))
             except Exception as e:
                 # Don't fail the entire execution if title generation fails
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.warning(f"Failed to start title generation: {e}")
             
             # Late scoring (non-blocking): capture context string and observation snapshot, then run in isolated session
@@ -1577,7 +1578,9 @@ class AgentV2:
                     )
                     await self.event_queue.put(finished_event)
                 completion_finished_emitted = True
-            
+
+            logger.info("agent execution finished")
+
         except Exception as e:
             # Handle errors and finish execution with error status
             if self.current_execution:
@@ -2116,8 +2119,6 @@ class AgentV2:
                             pass
                 # No persistence outside layout service; finalization happens on tool end
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error handling streaming event {stage} for {tool_name}: {e}")
             # Don't re-raise; this is streaming and shouldn't break the main flow
 
@@ -2312,8 +2313,5 @@ class AgentV2:
                 except Exception:
                     pass
         except Exception as e:
-            # Import logging if not already available
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error handling tool output for {tool_name}: {e}")
             # Don't re-raise; this is post-processing and shouldn't break the main flow
