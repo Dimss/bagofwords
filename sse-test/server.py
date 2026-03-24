@@ -53,9 +53,8 @@ async def event_generator():
     yield format_sse_event(done_event)
 
 
-@app.get("/stream")
-async def stream():
-    """SSE endpoint that streams Hello World messages"""
+async def create_stream():
+    """Create and return SSE stream"""
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
@@ -65,6 +64,12 @@ async def stream():
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         }
     )
+
+
+@app.get("/stream")
+async def stream():
+    """SSE endpoint that streams Hello World messages"""
+    return await create_stream()
 
 
 @app.get("/")
