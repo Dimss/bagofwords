@@ -5,6 +5,7 @@ Run with: python3 client.py
 """
 import requests
 import time
+import json
 
 def test_sse_stream():
     """Connect to SSE endpoint and print events"""
@@ -20,16 +21,34 @@ def test_sse_stream():
         # Stream the response
         response = requests.get(url, stream=True)
 
+        current_event = {}
         for line in response.iter_lines():
             if line:
                 decoded_line = line.decode('utf-8')
-                print(f"[{time.time() - start_time:.2f}s] {decoded_line}")
 
-                if decoded_line.startswith('data:'):
-                    event_count += 1
+                if decoded_line.startswith('event:'):
+                    current_event['type'] = decoded_line.split(':', 1)[1].strip()
+                elif decoded_line.startswith('data:'):
+                    data_str = decoded_line.split(':', 1)[1].strip()
+                    try:
+                        data = json.loads(data_str)
+                        event_count += 1
+                        print(f"[{time.time() - start_time:.2f}s] Event: {current_event.get('type', 'message')}")
+                        print(f"  Data: {data['data']}")
+                        print(f"  Timestamp: {data.get('timestamp', 'N/A')}")
+                        print(f"  Seq: {data.get('seq', 'N/A')}")
+                        print()
 
-                if '[DONE]' in decoded_line:
-                    break
+                        if data.get('event') == 'done':
+                            break
+                    except json.JSONDecodeError:
+                        print(f"[{time.time() - start_time:.2f}s] {decoded_line}")
+                        if '[DONE]' in decoded_line:
+                            break
+                    current_event = {}
+                elif not decoded_line:
+                    # Empty line marks end of event
+                    current_event = {}
 
     except KeyboardInterrupt:
         print("\n\n⏹️  Stopped by user")

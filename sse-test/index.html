@@ -106,13 +106,24 @@
 
             eventSource.onmessage = (event) => {
                 eventCount++;
-                const now = new Date().toISOString();
 
-                if (event.data === '[DONE]') {
-                    addEvent('✅ Stream completed', 'done');
-                    disconnect();
-                } else {
-                    addEvent(`Event #${eventCount}: ${event.data}`, 'data');
+                try {
+                    const data = JSON.parse(event.data);
+
+                    if (data.event === 'done') {
+                        addEvent(`✅ Stream completed - ${data.data.status}: ${data.data.total} messages`, 'done');
+                        disconnect();
+                    } else {
+                        addEvent(`Event #${eventCount}: ${data.data.message} (seq: ${data.seq})`, 'data');
+                    }
+                } catch (e) {
+                    // Fallback for non-JSON data
+                    if (event.data === '[DONE]') {
+                        addEvent('✅ Stream completed', 'done');
+                        disconnect();
+                    } else {
+                        addEvent(`Event #${eventCount}: ${event.data}`, 'data');
+                    }
                 }
             };
 

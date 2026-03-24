@@ -10,6 +10,7 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sse_schema import SSEEvent, format_sse_event
 
 app = FastAPI()
 
@@ -26,18 +27,30 @@ app.add_middleware(
 async def event_generator():
     """Generate SSE events - Hello World example"""
     for i in range(10):
-        # SSE format: "data: <message>\n\n"
-        timestamp = datetime.now().isoformat()
-        message = f"data: Hello World #{i+1} at {timestamp}\n\n"
+        # Create SSEEvent with structured data
+        event = SSEEvent(
+            event="message",
+            data={
+                "message": f"Hello World #{i+1}",
+                "count": i+1
+            },
+            seq=i
+        )
 
-        print(f"Sending: {message.strip()}")
+        # Format as SSE string
+        message = format_sse_event(event)
+        print(f"Sending: {event.event} - {event.data}")
         yield message
 
         # Wait 1 second between messages
         await asyncio.sleep(1)
 
-    # Send completion message
-    yield "data: [DONE]\n\n"
+    # Send completion event
+    done_event = SSEEvent(
+        event="done",
+        data={"status": "complete", "total": 10}
+    )
+    yield format_sse_event(done_event)
 
 
 @app.get("/stream")

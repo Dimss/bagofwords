@@ -10,10 +10,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY server.py .
+COPY sse_schema.py .
 COPY index.html .
+COPY client.py .
 
 # Expose port
 EXPOSE 3000
 
 # Run the server with uvicorn and multiple workers
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "3000", "--workers", "4"]
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "3000", "--workers", "4","--ws", "websockets", "--log-level","info","--loop","uvloop","--http", "httptools"]
