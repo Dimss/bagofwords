@@ -94,7 +94,7 @@
             eventCount = 0;
 
             // Create EventSource connection
-            eventSource = new EventSource('http://localhost:3000/stream');
+            eventSource = new EventSource('/stream');
 
             eventSource.onopen = () => {
                 statusText.textContent = 'Connected ✅';
