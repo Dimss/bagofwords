@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Hello World Client</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 {
+            color: #4ec9b0;
+        }
+        #status {
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background: #264f78;
+        }
+        #events {
+            background: #252526;
+            padding: 20px;
+            border-radius: 5px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #3e3e42;
+        }
+        .event {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2d2d30;
+            border-left: 3px solid #4ec9b0;
+        }
+        .timestamp {
+            color: #858585;
+            font-size: 0.9em;
+        }
+        .done {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌊 SSE Hello World Client</h1>
+
+    <div id="status">Status: <span id="statusText">Disconnected</span></div>
+
+    <button id="connectBtn" onclick="connect()">Connect</button>
+    <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+    <button onclick="clearEvents()">Clear</button>
+
+    <h2>Events:</h2>
+    <div id="events"></div>
+
+    <script>
+        let eventSource = null;
+        let eventCount = 0;
+        const statusText = document.getElementById('statusText');
+        const eventsDiv = document.getElementById('events');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+
+        function connect() {
+            if (eventSource) {
+                disconnect();
+            }
+
+            statusText.textContent = 'Connecting...';
+            statusText.style.color = '#ce9178';
+            eventCount = 0;
+
+            // Create EventSource connection
+            eventSource = new EventSource('http://localhost:3000/stream');
+
+            eventSource.onopen = () => {
+                statusText.textContent = 'Connected ✅';
+                statusText.style.color = '#4ec9b0';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                addEvent('🔌 Connected to SSE stream', 'system');
+            };
+
+            eventSource.onmessage = (event) => {
+                eventCount++;
+                const now = new Date().toISOString();
+
+                if (event.data === '[DONE]') {
+                    addEvent('✅ Stream completed', 'done');
+                    disconnect();
+                } else {
+                    addEvent(`Event #${eventCount}: ${event.data}`, 'data');
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                statusText.textContent = 'Error ❌';
+                statusText.style.color = '#f48771';
+                addEvent('❌ Connection error', 'error');
+                disconnect();
+            };
+        }
+
+        function disconnect() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+                statusText.textContent = 'Disconnected';
+                statusText.style.color = '#858585';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                addEvent('🔌 Disconnected', 'system');
+            }
+        }
+
+        function addEvent(text, type) {
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event ' + type;
+
+            const timestamp = new Date().toLocaleTimeString();
+            eventDiv.innerHTML = `
+                <span class="timestamp">[${timestamp}]</span>
+                <div>${text}</div>
+            `;
+
+            eventsDiv.appendChild(eventDiv);
+            eventsDiv.scrollTop = eventsDiv.scrollHeight;
+        }
+
+        function clearEvents() {
+            eventsDiv.innerHTML = '';
+            eventCount = 0;
+        }
+
+        // Auto-connect on page load (optional)
+        // connect();
+    </script>
+</body>
+</html>
