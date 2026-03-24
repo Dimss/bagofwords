@@ -1864,8 +1864,8 @@ class CompletionService:
                             # Mark queue as finished
                             event_queue.finish()
 
-            # Start agent execution in background
-            asyncio.create_task(run_agent_with_streaming())
+            # # Start agent execution in background
+            # asyncio.create_task(run_agent_with_streaming())
             _log("task_spawned")
 
             # Stream events
@@ -1885,8 +1885,8 @@ class CompletionService:
                 yield format_sse_event(start_event)
                 logger.info("completion.started event emitted, starting queue events streaming")
                 # Stream agent events
-                async for event in event_queue.get_events():
-                    yield format_sse_event(event)
+                # async for event in event_queue.get_events():
+                #     yield format_sse_event(event)
                 
                 # Send completion event
                 finish_event = SSEEvent(
