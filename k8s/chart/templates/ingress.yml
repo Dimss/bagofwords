@@ -23,7 +23,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: code-server
+                name: bowapp
                 port:
                   number: 8080
           {{- end }}
