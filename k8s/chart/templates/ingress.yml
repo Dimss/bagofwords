@@ -18,6 +18,15 @@ spec:
                 name: bowapp
                 port:
                   number: 3000
+          {{- if .Values.debug }}
+          - path: /vscode
+            pathType: Prefix
+            backend:
+              service:
+                name: code-server
+                port:
+                  number: 8080
+          {{- end }}
   {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
