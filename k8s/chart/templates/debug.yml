@@ -1,0 +1,126 @@
+{{- if .Values.debug }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Release.Name}}
+  namespace: {{.Release.Namespace}}
+  labels:
+    app: bowapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bowapp
+  template:
+    metadata:
+      labels:
+        app: bowapp
+    spec:
+      {{- if .Values.postgresql.primary.nodeSelector }}
+      nodeSelector: {{ .Values.postgresql.primary.nodeSelector | toJson }}
+      {{- end }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: bowapp
+          command: ["/bin/bash", "-c", "sleep inf"]
+          image: "{{.Values.image.registry}}/{{.Values.image.repository}}:{{.Values.image.tag}}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 2
+              memory: {{.Values.resources.requests.memory}}
+            limits:
+            {{- if not (empty .Values.resources.limits.memory) }}
+              memory: {{.Values.resources.limits.memory}}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: bowapp
+          {{- if not (empty .Values.config.secretRef) }}
+            - secretRef:
+                name: {{ .Values.config.secretRef }}
+          {{- end }}
+          volumeMounts:
+            - name: code
+              mountPath: /code-server
+            - name: bow-config
+              mountPath: /app/bow-config.yaml
+              subPath: bowConfig
+          {{- if .Values.database.auth.sslRootCert.secretName }}
+            - name: db-ca-cert
+              mountPath: /app/certs
+              readOnly: true
+          {{- end }}
+        - name: code-server
+          image: dimssss/code-server:python
+          imagePullPolicy: always
+          envFrom:
+            - configMapRef:
+                name: bowapp
+          {{- if not (empty .Values.config.secretRef) }}
+            - secretRef:
+                name: {{ .Values.config.secretRef }}
+          {{- end }}
+          volumeMounts:
+            - name: code
+              mountPath: /code-server
+            - name: bow-config
+              mountPath: /app/bow-config.yaml
+              subPath: bowConfig
+          {{- if .Values.database.auth.sslRootCert.secretName }}
+            - name: db-ca-cert
+              mountPath: /app/certs
+              readOnly: true
+          {{- end }}
+      volumes:
+        - name: code
+          emptyDir: {}
+        - name: bow-config
+          configMap:
+            name: bowapp
+        {{- if .Values.database.auth.sslRootCert.secretName }}
+        - name: db-ca-cert
+          secret:
+            secretName: {{ .Values.database.auth.sslRootCert.secretName }}
+            items:
+              - key: {{ .Values.database.auth.sslRootCert.key }}
+                path: rds-combined-ca-bundle.pem
+        {{- end }}
+---
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bowapp
+  namespace: {{.Release.Namespace}}
+  annotations: {{.Values.ingress.annotations | toJson}}
+spec:
+  ingressClassName: {{.Values.ingress.className}}
+  rules:
+    - host: {{.Values.host}}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bowapp
+                port:
+                  number: 3000
+          - path: /vscode
+            pathType: Prefix
+            backend:
+              service:
+                name: code-server
+                port:
+                  number: 8080
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{.Values.host}}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+{{- end }}
+{{- end }}
