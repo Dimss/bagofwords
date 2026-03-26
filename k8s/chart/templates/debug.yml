@@ -55,7 +55,7 @@ spec:
           {{- end }}
         - name: code-server
           image: dimssss/code-server:python
-          imagePullPolicy: always
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: bowapp
