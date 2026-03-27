@@ -103,6 +103,7 @@ RUN apt-get update && \
     # For PPTX to PNG preview generation (slides mode)
     apt-get install -y --no-install-recommends libreoffice-impress poppler-utils && \
     curl -fsSL https://code-server.dev/install.sh | sh && \
+    code-server --install-extension ms-python.python && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
