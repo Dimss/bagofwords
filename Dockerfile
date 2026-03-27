@@ -104,6 +104,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends libreoffice-impress poppler-utils && \
     curl -fsSL https://code-server.dev/install.sh | sh && \
     code-server --install-extension ms-python.python && \
+    code-server --install-extension ms-python.debugpy && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
