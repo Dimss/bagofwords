@@ -40,6 +40,9 @@ spec:
             {{- if not (empty .Values.resources.limits.memory) }}
               memory: {{.Values.resources.limits.memory}}
             {{- end }}
+          env:
+          - name: SHELL
+            value: /bin/bash
           envFrom:
             - configMapRef:
                 name: bowapp
