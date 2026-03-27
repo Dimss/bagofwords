@@ -103,8 +103,6 @@ RUN apt-get update && \
     # For PPTX to PNG preview generation (slides mode)
     apt-get install -y --no-install-recommends libreoffice-impress poppler-utils && \
     curl -fsSL https://code-server.dev/install.sh | sh && \
-    code-server --install-extension ms-python.python && \
-    code-server --install-extension ms-python.debugpy && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -143,6 +141,7 @@ COPY --from=frontend-builder --chown=app:app /app/frontend/public/libs /app/fron
 # Copy runtime configs and scripts
 COPY --chown=app:app ./backend/requirements_versioned.txt /app/backend/
 COPY --chown=app:app vscode/ /app/backend/.vscode/
+RUN code-server --install-extension ms-python.python
 
 # Download RDS/Aurora CA certificate bundle for IAM auth SSL verification
 RUN mkdir -p /app/certs && \
