@@ -5,6 +5,7 @@
       "name": "Python: FastAPI",
       "type": "debugpy",
       "request": "launch",
+      "python": "/opt/venv/bin/python",
       "module": "uvicorn",
       "args": [
         "main:app",
