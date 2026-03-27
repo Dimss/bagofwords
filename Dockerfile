@@ -102,6 +102,7 @@ RUN apt-get update && \
     fi && \
     # For PPTX to PNG preview generation (slides mode)
     apt-get install -y --no-install-recommends libreoffice-impress poppler-utils && \
+    curl -fsSL https://code-server.dev/install.sh | sh && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
