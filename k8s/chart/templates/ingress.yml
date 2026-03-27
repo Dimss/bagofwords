@@ -19,7 +19,7 @@ spec:
                 port:
                   number: 3000
           {{- if .Values.debug }}
-          - path: /vscode
+          - path: /vscode(/|$)(.*)
             pathType: Prefix
             backend:
               service:

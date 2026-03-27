@@ -22,11 +22,16 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
         - name: bowapp
-          command: ["/bin/bash", "-c", "sleep inf"]
+          command:
+            - code-server
+            - --auth=none
+            - --bind-addr=0.0.0.0:8080
+            - /app/backend
           image: "{{.Values.image.registry}}/{{.Values.image.repository}}:{{.Values.image.tag}}"
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+            - containerPort: 8080
           resources:
             requests:
               cpu: 2
@@ -43,31 +48,6 @@ spec:
                 name: {{ .Values.config.secretRef }}
           {{- end }}
           volumeMounts:
-            - name: code
-              mountPath: /code-server
-            - name: bow-config
-              mountPath: /app/bow-config.yaml
-              subPath: bowConfig
-          {{- if .Values.database.auth.sslRootCert.secretName }}
-            - name: db-ca-cert
-              mountPath: /app/certs
-              readOnly: true
-          {{- end }}
-        - name: code-server
-          image: dimssss/code-server:python
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
-          envFrom:
-            - configMapRef:
-                name: bowapp
-          {{- if not (empty .Values.config.secretRef) }}
-            - secretRef:
-                name: {{ .Values.config.secretRef }}
-          {{- end }}
-          volumeMounts:
-            - name: code
-              mountPath: /code-server
             - name: bow-config
               mountPath: /app/bow-config.yaml
               subPath: bowConfig
@@ -77,8 +57,6 @@ spec:
               readOnly: true
           {{- end }}
       volumes:
-        - name: code
-          emptyDir: {}
         - name: bow-config
           configMap:
             name: bowapp

@@ -12,7 +12,7 @@ spec:
       port: 3000
       targetPort: 3000
 {{- if .Values.debug }}
-    - name: http-vscode
+    - name: vscode
       port: 8080
       targetPort: 8080
 {{- end }}
