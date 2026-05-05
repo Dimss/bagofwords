@@ -25,7 +25,7 @@ from app.models.organization import Organization
 from app.models.membership import Membership
 
 from app.models.user import User
-from app.dependencies import get_user_db, get_async_db
+from app.dependencies import get_user_db, get_async_db, async_session_maker
 from app.models.oauth_account import OAuthAccount
 from fastapi.responses import RedirectResponse
 
@@ -386,7 +386,7 @@ async def current_user(
     request: Request,
     jwt_user: Optional[User] = Depends(_jwt_current_user),
     api_key: Optional[str] = Depends(api_key_header),
-    db: AsyncSession = Depends(get_async_db),
+    # db: AsyncSession = Depends(get_async_db),
 ) -> User:
     """
     Get the current user from either JWT token or API key.
@@ -397,24 +397,24 @@ async def current_user(
     # Try JWT first
     if jwt_user is not None:
         return jwt_user
-    
-    # Try API key from X-API-Key header
-    if api_key:
-        from app.services.api_key_service import ApiKeyService
-        api_key_service = ApiKeyService()
-        user = await api_key_service.get_user_by_api_key(db, api_key)
-        if user is not None:
-            return user
-    
-    # Try API key from Authorization header (for MCP clients that use Bearer format)
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer bow_"):
-        from app.services.api_key_service import ApiKeyService
-        api_key_service = ApiKeyService()
-        bearer_api_key = auth_header[7:]  # Remove "Bearer " prefix
-        user = await api_key_service.get_user_by_api_key(db, bearer_api_key)
-        if user is not None:
-            return user
+    async with async_session_maker() as db:
+        # Try API key from X-API-Key header
+        if api_key:
+            from app.services.api_key_service import ApiKeyService
+            api_key_service = ApiKeyService()
+            user = await api_key_service.get_user_by_api_key(db, api_key)
+            if user is not None:
+                return user
+
+        # Try API key from Authorization header (for MCP clients that use Bearer format)
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer bow_"):
+            from app.services.api_key_service import ApiKeyService
+            api_key_service = ApiKeyService()
+            bearer_api_key = auth_header[7:]  # Remove "Bearer " prefix
+            user = await api_key_service.get_user_by_api_key(db, bearer_api_key)
+            if user is not None:
+                return user
     
     # No valid authentication
     raise HTTPException(

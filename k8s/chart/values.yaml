@@ -14,6 +14,21 @@ postgresql:
     persistence:
       size: 20Gi
     nodeSelector: {}
+    extendedConfiguration: |
+      logging_collector = off
+      log_destination = 'stderr'
+      log_statement = 'none'
+      log_duration = off
+      log_connections = off
+      log_disconnections = off
+      log_hostname = off
+      log_line_prefix = '%t [%p]: user=%u,db=%d,app=%a '
+      log_error_verbosity = default
+      log_lock_waits = off
+      log_temp_files = -1
+      log_autovacuum_min_duration = -1
+      log_checkpoints = off
+      log_min_duration_statement = 100
 
 # Managed database with IAM auth (alternative to the bundled postgresql subchart).
 # When database.auth.provider is not "password", the postgresql subchart values
