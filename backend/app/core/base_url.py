@@ -20,8 +20,6 @@ from __future__ import annotations
 
 from fastapi import Request
 
-from app.settings.config import settings
-
 
 # bow_config defaults that should be treated as "no base_url set" so
 # request-derived fallback kicks in instead of returning the placeholder.
@@ -33,6 +31,7 @@ _DEFAULT_PLACEHOLDERS = (
 
 def derive_base_url(request: Request) -> str:
     """Return the externally-reachable base URL with no trailing slash."""
+    from app.settings.config import settings
     configured = (settings.bow_config.base_url or "").rstrip("/")
     if configured and configured not in _DEFAULT_PLACEHOLDERS:
         return configured
@@ -48,3 +47,16 @@ def derive_base_url(request: Request) -> str:
     scheme = request.url.scheme
     host = request.headers.get("host", request.url.netloc or "localhost")
     return f"{scheme}://{host}"
+
+
+def derive_mcp_base_url(request: Request) -> str:
+    """Like derive_base_url but checks mcp_public_url first.
+
+    Use for OAuth/MCP well-known endpoints so a Cloudflare Tunnel (or any
+    reverse-proxy) public URL can be configured independently of base_url.
+    """
+    from app.settings.config import settings
+    configured = (settings.bow_config.mcp_public_url or "").rstrip("/")
+    if configured:
+        return configured
+    return derive_base_url(request)
