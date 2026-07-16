@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bow-k8s": {
+      "command": "uv",
+      "args": ["run", "--script", "tools/agent/mcp-k8s-server.py"]
+    }
+  }
+}
